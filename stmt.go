@@ -25,16 +25,15 @@ import (
 )
 
 type statement struct {
-	stmt                *sql.Stmt
-	interpolateStrategy interpolation_strategy.InterpolateStrategy
-	originalQuery       vparam.Queryer
+	stmt                       *sql.Stmt
+	interpolateStrategyFactory interpolation_strategy.InterpolationStrategyFactory
+	originalQuery              vparam.Queryer
 }
 
-
-func newStatement( s *sql.Stmt, is interpolation_strategy.InterpolateStrategy ) *statement {
+func newStatement(s *sql.Stmt, interpolateStrategyFactory interpolation_strategy.InterpolationStrategyFactory) *statement {
 	return &statement{
-		stmt:                s,
-		interpolateStrategy: is,
+		stmt:                       s,
+		interpolateStrategyFactory: interpolateStrategyFactory,
 	}
 }
 
@@ -43,11 +42,11 @@ func (s *statement) Close() error {
 }
 
 func (s *statement) Query(ctx context.Context, query vparam.Parameterer) (rows vrows.Rowser, err error) {
-	_, values, err := query.Interpolate(s.originalQuery.SQLQueryUnInterpolated(), s.interpolateStrategy)
+	_, values, err := query.Interpolate(s.originalQuery.SQLQueryUnInterpolated(), s.interpolateStrategyFactory())
 	if err != nil {
 		return nil, err
 	}
-	sqlRows, err := s.stmt.QueryContext(ctx, values... )
+	sqlRows, err := s.stmt.QueryContext(ctx, values...)
 	if err != nil {
 		return nil, err
 	}
@@ -58,15 +57,15 @@ func (s *statement) Query(ctx context.Context, query vparam.Parameterer) (rows v
 }
 
 func (s *statement) Insert(ctx context.Context, query vparam.Parameterer) (result vresult.InsertResulter, err error) {
-	_, values, err := query.Interpolate(s.originalQuery.SQLQueryUnInterpolated(), s.interpolateStrategy)
+	_, values, err := query.Interpolate(s.originalQuery.SQLQueryUnInterpolated(), s.interpolateStrategyFactory())
 	if err != nil {
 		return nil, err
 	}
-	res, err := s.stmt.ExecContext(ctx, values... )
+	res, err := s.stmt.ExecContext(ctx, values...)
 	if err != nil {
 		return nil, err
 	}
-	return &goInsertResult{result: res,}, err
+	return &goInsertResult{result: res}, err
 }
 
 func (s *statement) Exec(ctx context.Context, query vparam.Parameterer) (result vresult.Resulter, err error) {

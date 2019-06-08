@@ -26,23 +26,29 @@ import (
 	"github.com/wojnosystems/vsql_engine/engine_context"
 )
 
-//Injects all of the middleware required to perform database queries :) Yes, the database layer interpolateStrategy middleware, too. Incept'ed!
+//Injects all of the middleware required to perform database queries :) Yes, the database layer interpolateStrategyFactory middleware, too. Incept'ed!
+// @param engine is the vsql_engine that provides for non-nested transactions. The middleware for the database will be injected into this
+// @param db is the database connection handle that will be used when database calls need to be made to store or retrieve data or start transactions, etc.
+// @param factory is a callback that creates a new interpolation_strategy.InterpolateStrategy. Each call to the factory should create a new instance with a new state if required. For MySQL, this is not necessary, but for postgres, the new instance should be the start of a query interpolation
 func InstallSingle(engine vsql_engine.SingleTXer, db *sql.DB, factory interpolation_strategy.InterpolationStrategyFactory) {
 
+	// Starting transactions
 	engine.BeginMW().Prepend(func(ctx context.Context, c engine_context.Beginner) {
 		tx, err := db.BeginTx(ctx, c.TxOptions().ToTxOptions())
-		c.SetQueryExecTransactioner(newQueryExecTransaction(tx, factory()))
+		c.SetQueryExecTransactioner(newQueryExecTransaction(tx, factory))
 		if err != nil {
 			c.SetError(err)
 			return
 		}
 		c.Next(ctx)
 	})
+
+	// Preparing statement that is NOT in a transaction
 	engine.StatementPrepareMW().Prepend(func(ctx context.Context, c engine_context.Preparer) {
 		var err error
 		var stmtWrap vstmt.Statementer
 		if c.QueryExecTransactioner() != nil {
-			stmtWrap, err = c.QueryExecTransactioner().Prepare(ctx,c.Query())
+			stmtWrap, err = c.QueryExecTransactioner().Prepare(ctx, c.Query())
 			if err != nil {
 				c.SetError(err)
 				return
@@ -53,12 +59,14 @@ func InstallSingle(engine vsql_engine.SingleTXer, db *sql.DB, factory interpolat
 				c.SetError(err)
 				return
 			}
-			stmtWrap := newStatement(goStmt, factory())
+			stmtWrap := newStatement(goStmt, factory)
 			stmtWrap.originalQuery = c.Query()
 		}
 		c.SetStatement(stmtWrap)
 		c.Next(ctx)
 	})
+
+	// Perform a query that returns row-results
 	engine.QueryMW().Prepend(func(ctx context.Context, c engine_context.Queryer) {
 		sqlQ, args, err := c.Query().Interpolate(c.Query().SQLQueryUnInterpolated(), factory())
 		if err != nil {
@@ -85,6 +93,8 @@ func InstallSingle(engine vsql_engine.SingleTXer, db *sql.DB, factory interpolat
 		c.SetRows(rowsWrap)
 		c.Next(ctx)
 	})
+
+	// Perform an insert (exec) call that you are expecting to return a last inserted row id
 	engine.InsertQueryMW().Prepend(func(ctx context.Context, c engine_context.Inserter) {
 		sqlQ, args, err := c.Query().Interpolate(c.Query().SQLQueryUnInterpolated(), factory())
 		if err != nil {
@@ -111,6 +121,8 @@ func InstallSingle(engine vsql_engine.SingleTXer, db *sql.DB, factory interpolat
 		c.SetInsertResult(resultWrap)
 		c.Next(ctx)
 	})
+
+	// Exec simply returns the number of rows changed/updated
 	engine.ExecQueryMW().Prepend(func(ctx context.Context, c engine_context.Execer) {
 		sqlQ, args, err := c.Query().Interpolate(c.Query().SQLQueryUnInterpolated(), factory())
 		if err != nil {
@@ -137,6 +149,8 @@ func InstallSingle(engine vsql_engine.SingleTXer, db *sql.DB, factory interpolat
 		c.SetResult(resultWrap)
 		c.Next(ctx)
 	})
+
+	// Ping performs a liveness/connectivity test of the database server
 	engine.PingMW().Prepend(func(ctx context.Context, c engine_context.Er) {
 		err := db.Ping()
 		if err != nil {
@@ -145,6 +159,8 @@ func InstallSingle(engine vsql_engine.SingleTXer, db *sql.DB, factory interpolat
 		}
 		c.Next(ctx)
 	})
+
+	// Callback when prepared statements are closed
 	engine.StatementCloseMW().Prepend(func(ctx context.Context, c engine_context.StatementCloser) {
 		err := c.Statement().Close()
 		if err != nil {
@@ -153,6 +169,8 @@ func InstallSingle(engine vsql_engine.SingleTXer, db *sql.DB, factory interpolat
 		}
 		c.Next(ctx)
 	})
+
+	// Callback when a query is performed on a statement.
 	engine.StatementQueryMW().Prepend(func(ctx context.Context, c engine_context.StatementQueryer) {
 		goRowsOut, err := c.Statement().Query(ctx, c.Parameterer())
 		if err != nil {

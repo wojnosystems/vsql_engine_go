@@ -26,14 +26,14 @@ import (
 )
 
 type queryExecTransaction struct {
-	goTransaction       *sql.Tx
-	interpolateStrategy interpolation_strategy.InterpolateStrategy
+	goTransaction              *sql.Tx
+	interpolateStrategyFactory interpolation_strategy.InterpolationStrategyFactory
 }
 
-func newQueryExecTransaction(goTransaction *sql.Tx, interpolateStrategy interpolation_strategy.InterpolateStrategy) *queryExecTransaction {
+func newQueryExecTransaction(goTransaction *sql.Tx, interpolateStrategyFactory interpolation_strategy.InterpolationStrategyFactory) *queryExecTransaction {
 	return &queryExecTransaction{
-		goTransaction:       goTransaction,
-		interpolateStrategy: interpolateStrategy,
+		goTransaction:              goTransaction,
+		interpolateStrategyFactory: interpolateStrategyFactory,
 	}
 }
 
@@ -48,7 +48,7 @@ func (q *queryExecTransaction) Rollback() error {
 }
 
 func (q *queryExecTransaction) Query(ctx context.Context, query vparam.Queryer) (rows vrows.Rowser, err error) {
-	queryString, values, err := query.Interpolate(query.SQLQueryUnInterpolated(),q.interpolateStrategy)
+	queryString, values, err := query.Interpolate(query.SQLQueryUnInterpolated(), q.interpolateStrategyFactory())
 	if err != nil {
 		return nil, err
 	}
@@ -62,7 +62,7 @@ func (q *queryExecTransaction) Query(ctx context.Context, query vparam.Queryer) 
 	return r, err
 }
 func (q *queryExecTransaction) Insert(ctx context.Context, query vparam.Queryer) (result vresult.InsertResulter, err error) {
-	queryString, values, err := query.Interpolate(query.SQLQueryUnInterpolated(),q.interpolateStrategy)
+	queryString, values, err := query.Interpolate(query.SQLQueryUnInterpolated(), q.interpolateStrategyFactory())
 	if err != nil {
 		return nil, err
 	}
@@ -70,17 +70,17 @@ func (q *queryExecTransaction) Insert(ctx context.Context, query vparam.Queryer)
 	if err != nil {
 		return nil, err
 	}
-	return &goInsertResult{result: res,}, err
+	return &goInsertResult{result: res}, err
 }
 func (q *queryExecTransaction) Exec(ctx context.Context, query vparam.Queryer) (result vresult.Resulter, err error) {
 	return q.Insert(ctx, query)
 }
 func (q *queryExecTransaction) Prepare(ctx context.Context, query vparam.Queryer) (stmt vstmt.Statementer, err error) {
-	goStmt, err := q.goTransaction.PrepareContext(ctx,query.SQLQueryInterpolated(q.interpolateStrategy))
+	goStmt, err := q.goTransaction.PrepareContext(ctx, query.SQLQueryInterpolated(q.interpolateStrategyFactory()))
 	if err != nil {
 		return
 	}
-	stmtWrapper := newStatement( goStmt, q.interpolateStrategy )
+	stmtWrapper := newStatement(goStmt, q.interpolateStrategyFactory)
 	stmtWrapper.originalQuery = query
 	return stmtWrapper, err
 }

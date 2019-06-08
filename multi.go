@@ -21,7 +21,7 @@ import (
 	"github.com/wojnosystems/vsql_engine"
 )
 
-//Injects all of the middleware required to perform database queries :) Yes, the database layer interpolateStrategy middleware, too. Incept'ed!
+//Injects all of the middleware required to perform database queries :) Yes, the database layer interpolateStrategyFactory middleware, too. Incept'ed!
 func InstallMulti(engine vsql_engine.MultiTXer, db *sql.DB, factory interpolation_strategy.InterpolationStrategyFactory) {
 	panic("not implemented yet")
 	//engine.BeginNestedMW().Prepend(func(ctx context.Context, c engine_context.NestedBeginner) {

@@ -23,14 +23,14 @@ type goRow struct {
 	sqlRows *sql.Rows
 }
 
-// Scan calls Scan() on the sql.Rows object and interpolateStrategy the primary way to convert values from SQL into Go-native objects
+// Scan calls Scan() on the sql.Rows object and interpolateStrategyFactory the primary way to convert values from SQL into Go-native objects
 func (m *goRow) Scan(dest ...interface{}) error {
 	return m.sqlRows.Scan(dest...)
 }
 
 // Columns returns a list of columns available for this vrow
 func (m *goRow) Columns() (columnNames []string) {
-	// #NOERR: Will never error as this cannot be used while the vrow interpolateStrategy closed
+	// #NOERR: Will never error as this cannot be used while the vrow interpolateStrategyFactory closed
 	columnNames, _ = m.sqlRows.Columns()
 	return
 }
