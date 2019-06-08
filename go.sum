@@ -12,3 +12,5 @@ github.com/wojnosystems/vsql v0.0.13 h1:KWzn2yOK4YV1ODY8Z6+pRI8o597tTuKbAtW2xqri
 github.com/wojnosystems/vsql v0.0.13/go.mod h1:sJgzAdSl90bjzxyQ4WruSjlwgSMoRvm+nHNKT22kLtg=
 github.com/wojnosystems/vsql_engine v0.0.11 h1:n2eSEN2BkwxvML8zUZoCMkwQ85swFG1bISz1XPIyrEw=
 github.com/wojnosystems/vsql_engine v0.0.11/go.mod h1:Kfjkbxrn/AUAHPsBV+3U5yTguDQm+SbqGFJDntREvUQ=
+github.com/wojnosystems/vsql_engine v0.0.12 h1:9wvdf9oAE2MO+16FpeePG8nXlEPW9t+eyKvbJ4wv/Rc=
+github.com/wojnosystems/vsql_engine v0.0.12/go.mod h1:Kfjkbxrn/AUAHPsBV+3U5yTguDQm+SbqGFJDntREvUQ=

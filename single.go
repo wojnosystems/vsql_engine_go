@@ -19,6 +19,9 @@ import (
 	"context"
 	"database/sql"
 	"github.com/wojnosystems/vsql/interpolation_strategy"
+	"github.com/wojnosystems/vsql/vresult"
+	"github.com/wojnosystems/vsql/vrows"
+	"github.com/wojnosystems/vsql/vstmt"
 	"github.com/wojnosystems/vsql_engine"
 	"github.com/wojnosystems/vsql_engine/engine_context"
 )
@@ -36,13 +39,23 @@ func InstallSingle(engine vsql_engine.SingleTXer, db *sql.DB, factory interpolat
 		c.Next(ctx)
 	})
 	engine.StatementPrepareMW().Prepend(func(ctx context.Context, c engine_context.Preparer) {
-		goStmt, err := db.PrepareContext(ctx, c.Query().SQLQueryInterpolated(factory()))
-		if err != nil {
-			c.SetError(err)
-			return
+		var err error
+		var stmtWrap vstmt.Statementer
+		if c.QueryExecTransactioner() != nil {
+			stmtWrap, err = c.QueryExecTransactioner().Prepare(ctx,c.Query())
+			if err != nil {
+				c.SetError(err)
+				return
+			}
+		} else {
+			goStmt, err := db.PrepareContext(ctx, c.Query().SQLQueryInterpolated(factory()))
+			if err != nil {
+				c.SetError(err)
+				return
+			}
+			stmtWrap := newStatement(goStmt, factory())
+			stmtWrap.originalQuery = c.Query()
 		}
-		stmtWrap := newStatement(goStmt, factory())
-		stmtWrap.originalQuery = c.Query()
 		c.SetStatement(stmtWrap)
 		c.Next(ctx)
 	})
@@ -52,13 +65,22 @@ func InstallSingle(engine vsql_engine.SingleTXer, db *sql.DB, factory interpolat
 			c.SetError(err)
 			return
 		}
-		goRowsOut, err := db.QueryContext(ctx, sqlQ, args...)
-		if err != nil {
-			c.SetError(err)
-			return
-		}
-		rowsWrap := &goRows{
-			sqlRows: goRowsOut,
+		var rowsWrap vrows.Rowser
+		if c.QueryExecTransactioner() != nil {
+			rowsWrap, err = c.QueryExecTransactioner().Query(ctx, c.Query())
+			if err != nil {
+				c.SetError(err)
+				return
+			}
+		} else {
+			goRowsOut, err := db.QueryContext(ctx, sqlQ, args...)
+			if err != nil {
+				c.SetError(err)
+				return
+			}
+			rowsWrap = &goRows{
+				sqlRows: goRowsOut,
+			}
 		}
 		c.SetRows(rowsWrap)
 		c.Next(ctx)
@@ -69,13 +91,22 @@ func InstallSingle(engine vsql_engine.SingleTXer, db *sql.DB, factory interpolat
 			c.SetError(err)
 			return
 		}
-		goResOut, err := db.ExecContext(ctx, sqlQ, args...)
-		if err != nil {
-			c.SetError(err)
-			return
-		}
-		resultWrap := &goInsertResult{
-			result: goResOut,
+		var resultWrap vresult.InsertResulter
+		if c.QueryExecTransactioner() != nil {
+			resultWrap, err = c.QueryExecTransactioner().Insert(ctx, c.Query())
+			if err != nil {
+				c.SetError(err)
+				return
+			}
+		} else {
+			goResOut, err := db.ExecContext(ctx, sqlQ, args...)
+			if err != nil {
+				c.SetError(err)
+				return
+			}
+			resultWrap = &goInsertResult{
+				result: goResOut,
+			}
 		}
 		c.SetInsertResult(resultWrap)
 		c.Next(ctx)
@@ -86,13 +117,22 @@ func InstallSingle(engine vsql_engine.SingleTXer, db *sql.DB, factory interpolat
 			c.SetError(err)
 			return
 		}
-		goResOut, err := db.ExecContext(ctx, sqlQ, args...)
-		if err != nil {
-			c.SetError(err)
-			return
-		}
-		resultWrap := &goInsertResult{
-			result: goResOut,
+		var resultWrap vresult.Resulter
+		if c.QueryExecTransactioner() != nil {
+			resultWrap, err = c.QueryExecTransactioner().Exec(ctx, c.Query())
+			if err != nil {
+				c.SetError(err)
+				return
+			}
+		} else {
+			goResOut, err := db.ExecContext(ctx, sqlQ, args...)
+			if err != nil {
+				c.SetError(err)
+				return
+			}
+			resultWrap = &goInsertResult{
+				result: goResOut,
+			}
 		}
 		c.SetResult(resultWrap)
 		c.Next(ctx)
@@ -157,15 +197,8 @@ func InstallSingle(engine vsql_engine.SingleTXer, db *sql.DB, factory interpolat
 		c.Next(ctx)
 	})
 	engine.RowsNextMW().Prepend(func(ctx context.Context, c engine_context.RowsNexter) {
-		c.Rows().Next()
-		orig := c.Row()
-		// only re-create if nil
-		if orig == nil {
-			orig = &goRow{
-				sqlRows: c.Rows().(*goRows).sqlRows,
-			}
-			c.SetRow(orig)
-		}
+		nextRow := c.Rows().Next()
+		c.SetRow(nextRow)
 		c.Next(ctx)
 	})
 	engine.RowsCloseMW().Prepend(func(ctx context.Context, c engine_context.Rowser) {

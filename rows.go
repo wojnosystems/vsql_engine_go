@@ -21,7 +21,6 @@ import (
 )
 
 type goRows struct {
-	vrows.Rowser
 	sqlRows            *sql.Rows
 }
 

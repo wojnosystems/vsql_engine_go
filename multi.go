@@ -155,15 +155,8 @@ func InstallMulti(engine vsql_engine.MultiTXer, db *sql.DB, factory interpolatio
 	//	c.Next(ctx)
 	//})
 	//engine.RowsNextMW().Prepend(func(ctx context.Context, c engine_context.RowsNexter) {
-	//	c.Rows().Next()
-	//	orig := c.Row()
-	//	// only re-create if nil
-	//	if orig == nil {
-	//		orig = &goRow{
-	//			sqlRows: c.Rows().(*goRows).sqlRows,
-	//		}
-	//		c.SetRow(orig)
-	//	}
+	//	nextRow := c.Rows().Next()
+	//	c.SetRow(nextRow)
 	//	c.Next(ctx)
 	//})
 	//engine.RowsCloseMW().Prepend(func(ctx context.Context, c engine_context.Rowser) {

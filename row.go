@@ -17,11 +17,9 @@ package vsql_engine_go
 
 import (
 	"database/sql"
-	"github.com/wojnosystems/vsql/vrows"
 )
 
 type goRow struct {
-	vrows.Rower
 	sqlRows *sql.Rows
 }
 
