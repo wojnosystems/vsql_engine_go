@@ -8,9 +8,11 @@ github.com/stretchr/testify v1.3.1-0.20190311161405-34c6fa2dc709 h1:Ko2LQMrRU+Oy
 github.com/stretchr/testify v1.3.1-0.20190311161405-34c6fa2dc709/go.mod h1:M5WIy9Dh21IEIfnGCwXGc5bZfKNJtfHm1UVUgZn+9EI=
 github.com/wojnosystems/go_keyvaluer v1.0.1 h1:tmTLNSLKwWaN+YgKwiz2y7wA8swBIdlCJFu8RdvcsCo=
 github.com/wojnosystems/go_keyvaluer v1.0.1/go.mod h1:VdLFFgO06LnWGvgHNwoihpShWAldf8KWNezHWqfE7ww=
+github.com/wojnosystems/go_keyvaluer v1.0.2/go.mod h1:VdLFFgO06LnWGvgHNwoihpShWAldf8KWNezHWqfE7ww=
 github.com/wojnosystems/vsql v0.0.13 h1:KWzn2yOK4YV1ODY8Z6+pRI8o597tTuKbAtW2xqriILg=
 github.com/wojnosystems/vsql v0.0.13/go.mod h1:sJgzAdSl90bjzxyQ4WruSjlwgSMoRvm+nHNKT22kLtg=
 github.com/wojnosystems/vsql_engine v0.0.11 h1:n2eSEN2BkwxvML8zUZoCMkwQ85swFG1bISz1XPIyrEw=
 github.com/wojnosystems/vsql_engine v0.0.11/go.mod h1:Kfjkbxrn/AUAHPsBV+3U5yTguDQm+SbqGFJDntREvUQ=
 github.com/wojnosystems/vsql_engine v0.0.12 h1:9wvdf9oAE2MO+16FpeePG8nXlEPW9t+eyKvbJ4wv/Rc=
 github.com/wojnosystems/vsql_engine v0.0.12/go.mod h1:Kfjkbxrn/AUAHPsBV+3U5yTguDQm+SbqGFJDntREvUQ=
+github.com/wojnosystems/vsql_engine v0.0.13/go.mod h1:5rz4ANp8ZCQjsdZM+1tg2eh12wBDg0Ui9aLI9wZ0LyU=
